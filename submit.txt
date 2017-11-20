@@ -1,0 +1,9 @@
+sbatch --nodes=2 --ntasks=2 -t 2-0:00 submit.sh ./a.out
+
+#!/bin/bash
+for i in {1..3}
+do
+  sbatch --nodes=$1 --ntasks=$1 -t 2-0:00 submit.sh ./a.out $1
+  sleep 1s
+  cat output.txt
+done
