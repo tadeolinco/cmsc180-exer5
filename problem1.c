@@ -21,10 +21,11 @@ int main(int argc, char **argv)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   int n = atoi(argv[1]);
-  int total_sum = 0;
-  int sub_sum = 0;
+  int total_sum = 0; // to hold all sub_sums
+  int sub_sum = 0;   // placeholder sum for each process
   int **matrix = NULL;
 
+  // placeholder matrix for each process
   int **sub_matrix = (int **)malloc(sizeof(int *) * n);
   for (i = 0; i < n; ++i)
   {
@@ -35,6 +36,7 @@ int main(int argc, char **argv)
 
   if (rank == 0)
   {
+    // randomize root matrix
     srand((int)time(0));
     matrix = (int **)malloc(sizeof(int *) * n);
     for (i = 0; i < n; ++i)
@@ -46,6 +48,7 @@ int main(int argc, char **argv)
       }
     }
 
+    // for each process, column-wise distribute sub_matrices
     for (k = 0; k < processes; ++k)
     {
       for (i = 0; i < n; ++i)
@@ -63,6 +66,7 @@ int main(int argc, char **argv)
   }
   else
   {
+    // each process waits for their sub_matrix
     for (i = 0; i < n; ++i)
     {
       for (j = 0; j < n / processes; ++j)
@@ -72,12 +76,15 @@ int main(int argc, char **argv)
     }
   }
 
+  // compute column sum
   for (i = 0; i < n; ++i)
     for (j = 0; j < n / processes; ++j)
       sub_sum += sub_matrix[i][j];
 
   if (rank == 0)
   {
+
+    // receive sub_sums from each process
     total_sum += sub_sum;
     for (k = 1; k < processes; ++k)
     {
@@ -88,10 +95,14 @@ int main(int argc, char **argv)
   }
   else
   {
+    // each slaves sends their sub_sum
     MPI_Send(&sub_sum, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
   }
 
+  // output time for all to finish
   printf("Total time: %.3fs\n", (get_time() - then) / 1000.0);
+
+  // clean up
   if (rank == 0)
   {
     for (i = 0; i < n; ++i)
