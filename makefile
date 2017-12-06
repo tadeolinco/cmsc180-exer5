@@ -1,3 +1,3 @@
 run:
-	mpicc hello.c
-	mpirun -np 4 ./a.out 10000
+	mpicc problem1.c
+	mpirun -n 4 ./a.out 5000
