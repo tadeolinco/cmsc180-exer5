@@ -41,8 +41,8 @@ int main(int argc, char **argv)
   if (rank == 0)
     for (i = 0; i < n * n; ++i)
       mul_matrix[i] = rand() % 10;
-  // mul_matrix[i] = 1;
-  MPI_Bcast(mul_matrix, n, MPI_INT, 0, MPI_COMM_WORLD);
+
+  MPI_Bcast(mul_matrix, n * n, MPI_INT, 0, MPI_COMM_WORLD);
 
   int *matrix = NULL;
   if (rank == 0)
@@ -51,34 +51,34 @@ int main(int argc, char **argv)
     matrix = (int *)malloc(sizeof(int) * n * n);
     for (i = 0; i < n * n; ++i)
       matrix[i] = rand() % 10;
-    // matrix[i] = 1;
   }
 
   int *sub_matrix = (int *)malloc(sizeof(int) * n * n / processes);
   MPI_Scatter(matrix, n * n / processes, MPI_INT, sub_matrix, n * n / processes, MPI_INT, 0, MPI_COMM_WORLD);
 
-  int *sub_product = (int *)malloc(sizeof(int) * n / processes);
+  int *sub_product = (int *)malloc(sizeof(int) * n * n / processes);
 
   for (i = 0; i < n / processes; ++i)
   {
-    sub_product[i] = 0;
     for (j = 0; j < n; ++j)
     {
-      sub_product[i] += sub_matrix[i * n + j] * vector[j];
+      int sum = 0;
+      for (k = 0; k < n; ++k)
+      {
+        sum += sub_matrix[i * n + k] * mul_matrix[k * n + j];
+      }
+      sub_product[i * n + j] = sum;
     }
   }
 
   int *product = NULL;
   if (rank == 0)
-    product = (int *)malloc(sizeof(int) * n);
+    product = (int *)malloc(sizeof(int) * n * n);
 
-  MPI_Gather(sub_product, n / processes, MPI_INT, product, n / processes, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Gather(sub_product, n * n / processes, MPI_INT, product, n * n / processes, MPI_INT, 0, MPI_COMM_WORLD);
 
   // output time for all to finish
-  if (rank == 0)
-  {
-    printf("Total time: %.3fs\n", (get_time() - then) / 1000.0);
-  }
+  printf("Total time: %.3fs\n", (get_time() - then) / 1000.0);
 
   // clean up
   if (rank == 0)
@@ -88,12 +88,5 @@ int main(int argc, char **argv)
   }
   free(sub_matrix);
   free(sub_product);
-  free(vector);
+  free(mul_matrix);
 }
-
-/*
-for k in row * col
-  for i in row
-    for j in col
-      matrix[k] += a[k / row * row + i] * b[k % col + j * col]
-*/

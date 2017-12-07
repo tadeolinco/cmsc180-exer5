@@ -1,3 +1,3 @@
 run:
-	mpicc problem2.c
-	mpirun -n 4 ./a.out 1000
+	mpicc problem6.c
+	mpirun -n 4 ./a.out
