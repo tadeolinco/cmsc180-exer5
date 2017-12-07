@@ -21,6 +21,7 @@ int main(int argc, char **argv)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   int n = atoi(argv[1]);
+  printf("n = %d\n", n);
   int total_sum = 0; // to hold all sub_sums
   int sub_sum = 0;   // placeholder sum for each process
   int **matrix = NULL;
