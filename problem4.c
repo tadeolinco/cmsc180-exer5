@@ -13,17 +13,6 @@ long long get_time()
   return (((long long)tv.tv_sec) * 1000) + (tv.tv_usec / 1000);
 }
 
-void print_matrix(int *matrix, int row, int col)
-{
-  int i, j;
-  for (i = 0; i < row * col; ++i)
-  {
-    printf("%d ", matrix[i]);
-    if (i % col == col - 1)
-      printf("\n");
-  }
-}
-
 int main(int argc, char **argv)
 {
   long long then = get_time();
@@ -37,13 +26,16 @@ int main(int argc, char **argv)
   srand((int)time(0));
   int n = atoi(argv[1]);
 
+  // initialize matrix to multiply with
   int *mul_matrix = (int *)malloc(sizeof(int) * n * n);
   if (rank == 0)
     for (i = 0; i < n * n; ++i)
       mul_matrix[i] = rand() % 10;
 
+  // broadcast so that other processes also have it
   MPI_Bcast(mul_matrix, n * n, MPI_INT, 0, MPI_COMM_WORLD);
 
+  // initialize matrix
   int *matrix = NULL;
   if (rank == 0)
   {
@@ -53,11 +45,14 @@ int main(int argc, char **argv)
       matrix[i] = rand() % 10;
   }
 
+  // holder for sub parts of the matrix
   int *sub_matrix = (int *)malloc(sizeof(int) * n * n / processes);
   MPI_Scatter(matrix, n * n / processes, MPI_INT, sub_matrix, n * n / processes, MPI_INT, 0, MPI_COMM_WORLD);
 
+  // holder for a part of the product
   int *sub_product = (int *)malloc(sizeof(int) * n * n / processes);
 
+  // compute for matrix multiplication
   for (i = 0; i < n / processes; ++i)
   {
     for (j = 0; j < n; ++j)
@@ -75,6 +70,7 @@ int main(int argc, char **argv)
   if (rank == 0)
     product = (int *)malloc(sizeof(int) * n * n);
 
+  // gather sub products into product
   MPI_Gather(sub_product, n * n / processes, MPI_INT, product, n * n / processes, MPI_INT, 0, MPI_COMM_WORLD);
 
   // output time for all to finish
